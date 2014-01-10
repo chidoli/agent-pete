@@ -122,10 +122,10 @@ def normalizeInput(coursename):
     if len(num) == 3:
         num += '00'
     if not len(num) == 5:
-        raise Exception('Invalid course number: %s' % (subj+num))
+        raise Exception('Invalid course number: %s' % (coursename))
 
-    if len(subj) >= 4:
-        raise Exception('Invalid course subject: %s' % (subj+num))
+    if not len(subj) <= 4:
+        raise Exception('Invalid course subject: %s' % (coursename))
 
     if subj == 'BIO':
         subj = 'BIOL'
@@ -170,7 +170,7 @@ def getCourseInfo(coursename):
             links.append(link)
   
     if not links:
-        raise Exception('Course %s is not found' % (c_subj, c_num))
+        raise Exception('Course %s is not found' % (coursename))
   
     # visit links and get seats/waitlist seats
     asyncs = []
