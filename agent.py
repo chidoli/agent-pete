@@ -1,26 +1,154 @@
 #!/usr/bin/python
 
 import json
+import time
+import copy
 from multiprocessing.pool import ThreadPool
-from urlparse import urlparse
+from HTMLParser import HTMLParser
 
 import mechanize
-import requests as reqs
-from BeautifulSoup import BeautifulSoup as Soup
-
-from soupselect import select
 
 
-def fetchSectionList(termcode, c_subj, c_num):
+class MyHTMLParser(HTMLParser):
+    # option: enable parsing data
+    def __init__(self, option=0):
+        HTMLParser.__init__(self)
+        self.tables = []
+        self.start = -1
+        self.option = option
+        if option == 1:
+            self.fed = []
+    
+    def handle_starttag(self, tag, attrs):
+        if tag == 'table':
+            if attrs[0][1] == 'datadisplaytable' and len(attrs) == 2:
+                self.start=self.getpos()[0] # mark the start of table
+    def handle_endtag(self, tag):
+        # mark the end of table only if the start of table has been marked
+        if tag == 'table' and self.start != -1:
+            self.tables.append( (self.start, self.getpos()[0]) )
+            self.start = -1
+    
+    def handle_data(self, d):
+        if self.option == 1:
+            self.fed.append(d)
+    
+    def get_data(self):
+        return ''.join(self.fed)
+
+
+def strip_tags(html):
+    s = MyHTMLParser(1)
+    s.feed(html)
+    return s.get_data()
+
+
+def getAttr(html):
+    attrs =[]
+    parser = MyHTMLParser()
+    parser.feed(html)
+    
+    html = html.splitlines()
+    for j in range(0, len(parser.tables) ):
+        count = -1;
+        temp = { 'time': [], 'days': [], 'stype': [], 'inst': []}
+        for i in range (parser.tables[j][0], parser.tables[j][1]):
+            if 'dddefault' in html[i]:
+                count = count+1
+            if count == 0: # TYPE
+                continue
+            elif count == 1:    # TIME
+                temp['time'].append(strip_tags( html[i] ))
+            elif count == 2:    # DAYS
+                temp['days'].append(strip_tags( html[i] ))
+            elif count == 3:    # WHERE
+                continue
+            elif count == 4:    # DATE RANGE
+                continue
+            elif count == 5:    # Schedule Type
+                temp['stype'].append(strip_tags( html[i] ))
+            elif count == 6:    # Instructor
+                temp['inst'].append(strip_tags( html[i] ))
+                attrs.append( copy.copy(temp) )
+                count = -1
+    return attrs
+
+
+def getSeats(html):
+    seats =[]
+    html = html.split('\n')
+    
+    for line in html:
+        if 'dddefault' in line and len(line) < 32: # arbitrary
+            seats.append( strip_tags(line) )
+    
+    return seats[3] # third entry of this page gives the num of available seats
+
+
+def fetchLink(br, link):
+    br.follow_link(link)
+    html = br.response().read()
+    
+    seat = []
+    
+    # get section number here
+    course_raw = link.text
+    course_split = course_raw.split(" -");
+    course_section = course_split[3]
+    course_section = course_section[1:len(course_section)]
+    seat.append(course_section)
+    
+    # get crn
+    course_crn = course_split[1];
+    seat.append(course_crn)
+    
+    # get seat info here
+    seat.append(getSeats(html))
+    
+    # get course name
+    seat.append( course_split[0] )
+    
+    return seat
+
+def normalizeInput(coursename):
+    coursename = coursename.upper();
+    coursename = coursename.replace(' ','')
+    
+    subj = None
+    num = None
+    for i, c in enumerate(coursename):
+        if c.isdigit():
+            subj = coursename[:i]
+            num = coursename[i:]
+            break
+    
+    if len(num) == 3:
+        num += '00'
+    if not len(num) == 5:
+        raise Exception('Invalid course number: %s' % (coursename))
+    
+    if not len(subj) <= 4:
+        raise Exception('Invalid course subject: %s' % (coursename))
+    
+    if subj == 'BIO':
+        subj = 'BIOL'
+    
+    return (subj, num)
+
+
+def getCourseInfo(coursename):
+    c_subj, c_num = normalizeInput(coursename)
+    
     br = mechanize.Browser()
     br.set_handle_robots(False)
     br.addheaders = [('User-agent', 'Firefox')]
-
+    
     # open schedule
     br.open("http://wl.mypurdue.purdue.edu/schedule")
     br.form = list( br.forms() )[0]
-    br['p_term'] = [termcode]
-    br.submit()         
+    # 201410 = fall 2014, 201420 = Spring, 201430 = summer
+    br['p_term'] = ['201420']
+    br.submit()
     
     # Now we are in course selection mode
     br.form = list( br.forms() )[0]
@@ -30,172 +158,59 @@ def fetchSectionList(termcode, c_subj, c_num):
         if control.name == 'sel_crse' and control.type == 'text':
             control.value = c_num
     br.submit()
-  
-    # Course Schedule Listing Page
-    p = urlparse(br.geturl())
-    host = p.scheme + '://' + p.netloc
-    html = br.response().read() 
-    sections = parseSectionList(html)
-    for s in sections:
-        s['link'] = host + s['link']
-    return sections
-
-def parseSectionList(html):
-    schedules = []
-
-    soup = Soup(html)
-    s_tables = select(soup, 'table.datadisplaytable')
-    for s_table in s_tables:
-        s_subtables = select(s_table, 'table.datadisplaytable')
-        s_ths = select(s_table, 'th.ddlabel')
-        for s_subtable, s_th in zip(s_subtables, s_ths):
-            s_tds = select(s_subtable, 'td.dddefault')
-            d = {}
-            keys = ['type', 'time', 'days', 'where', 'date_range', 
-                    'schedule_type', 'instructors']
-            for key, s_td in zip(keys, s_tds):
-                d[key] = s_td.text
-            schedules.append(d)
-
-            s_anchors = select(s_th, 'a')
-            d['link'] = s_anchors[0].get('href')
-    return schedules 
-
-def fetchSectionDetails(url):
-    resp = reqs.get(url)
-    html = resp.content
-    return parseSectionDetail(html)
-
-def parseSectionDetail(html):
-    detail = {}
-    soup = Soup(html)
-    s_title = select(soup, 'th.ddlabel')[0]
-    title_txt = s_title.text
-    sp = title_txt.split(" - ");
-    detail['name'] = sp[0]
-    detail['crn'] = sp[1]
-    detail['code'] = sp[3]
-
-    s_subtable = select(soup, '.datadisplaytable .datadisplaytable')[0]
-    s_remaining = select(s_subtable, '.dddefault')[2]
-    detail['seats'] = s_remaining.text
-    return detail
-
-def getSemesterCode(term):
-    term = term.replace(' ','') .lower()
-
-    sem = None
-    year = None
-    err_sem = Exception('Invalid term semester %s' % term)
-    err_year = Exception('Invalid term year %s' % term)
-
-    for i, c in enumerate(term):
-        if i == 0:
-            continue
-        if term[0].isdigit() != c.isdigit():
-            a, b = term[:i], term[i:]
-            sem, year = (a, b) if c.isdigit() else (b, a)
-            break
-
-    for c in sem:
-        if not c.isalpha():
-            raise err_sem
-    for c in year:
-        if not c.isdigit():
-            raise err_year
     
-    sem_codes = {
-        'fall': '10',
-        'spring': '20',
-        'summer': '30',
-    }
-    if sem not in sem_codes:
-        raise err_sem
-    termcode = year + sem_codes[sem]
-    return termcode
-     
-def normalizeInput(coursename):
-    coursename = coursename.replace(' ','') .upper()
-
-    subj = None
-    num = None
-    err_subj = Exception('Invalid course subject: %s' % coursename)
-    err_num = Exception('Invalid course number: %s' % coursename)
-
-    for i, c in enumerate(coursename):
-        if c.isdigit():
-            subj = coursename[:i]
-            num = coursename[i:]
-            break
-
-    if subj == None:
-        raise err_subj
-    if num == None:
-        raise err_num
-
-    if len(num) == 3:
-        num += '00'
-    if not len(num) == 5:
-        raise err_subj
-    if not len(subj) <= 4:
-        raise err_num
-
-    common = {'BIO':'BIOL', 'ENG':'ENGL'}
-    if subj in common:
-        subj = common[subj]
-
-    for c in subj:
-        if not c.isalpha():
-            raise err_subj
-    for c in num:
-        if not c.isdigit():
-            raise err_num
-    return (subj, num)
-
-def getCourseInfo(term, coursename):
-    termcode = getSemesterCode(term)
-    c_subj, c_num = normalizeInput(coursename)
-
-    sections = fetchSectionList(termcode, c_subj, c_num)
-
+    # Course Schedule Listing Page
+    html = br.response().read()
+    sections = getAttr(html)
+    
+    # now we need to find the link to the course
+    links = []
+    for link in br.links():
+        if link.text is None:
+            continue
+        if c_subj in link.text and c_num in link.text:
+            # all the follwing links must be of some value
+            links.append(link)
+    
+    if not links:
+        raise Exception('Course %s is not found' % (coursename))
+    
     # visit links and get seats/waitlist seats
-    links = [x['link'] for x in sections]
-    pool = ThreadPool()
     asyncs = []
+    pool = ThreadPool(30)
     for link in links:
-        a = pool.apply_async(fetchSectionDetails, [link])
+        a = pool.apply_async(fetchLink, [copy.copy(br), link])
         asyncs.append(a)
-
-    details = []
+    
+    seats = []
     for a in asyncs:
         v = a.get()
         if v:
-            details.append(v)
-        asyncs.remove(a)
-
+            seats.append(v)
+    
     # merge section dic with seat_all into ret_all
-    r = {
-        'Course': c_subj + c_num + ' ' + details[0]['name'],
+    ret_all = {
+        'Course': c_subj + c_num + ' ' + seats[0][3],
     }
-    for section, detail in zip(sections, details):
-        stype = section['schedule_type']
-        if stype not in r:
-            r[stype] = {}
-        d = dict(section)
-        d['code'] = detail['code']
-        d['seats'] = detail['seats']
-        r[stype][detail['crn']] = d
-    return r
+    for seat, section in zip(seats, sections):
+        stype = section['stype'][0]
+        if stype not in ret_all:
+            ret_all[stype] = {}
+        ret_all[stype][seat[1]] = {
+            'time': section['time'],
+            'sec': seat[0],
+            'inst': section['inst'],
+            'days': section['days'],
+            'seats': int(seat[2]),
+        }
+    return ret_all
 
-  
+
 if __name__ == '__main__':
-   import time
-   start = time.clock()
-   import sys
-   course = sys.argv[1]
-   term = 'spring 2014'
-   info = getCourseInfo(term, course)
-   print '\n\n\n', info
-   print "global: " + str(time.clock() - start)
-  
+    start = time.clock()
+    import sys
+    info = getCourseInfo(sys.argv[1])
+    print '\n\n\n', json.dumps(info)
+    print "global: " + str(time.clock() - start)
+
 
