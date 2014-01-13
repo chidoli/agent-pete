@@ -70,12 +70,28 @@ def main():
                     body += trsForSection(k, crn, code, seats, m, first_m)
                     if seats > 0:
                         if 'section' in req:
-                            valid = code in req['section']
+                            for s in req['section']:
+                                valid = code in s
+                                if valid:
+                                    break
                         else:
                             valid = True
                         if valid:
                             availables.append([k, crn, code, seats, m, first_m])
                     first_m = False
+        
+        if 'section' in req:
+            for s in req['section']:
+                all_in = True
+                for _s in s:
+                    codes = [x[2] for x in availables]
+                    if _s not in codes:
+                        all_in = False
+                        break
+                if not all_in:
+                    for _s in s:
+                        if _s in codes:
+                            availables.pop(codes.index(_s))
 
         title = '<h4>%s</h4>\n' % info['Course']
         body = '%s\n<table>\n%s</table>\n' % (title, body)
