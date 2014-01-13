@@ -8,7 +8,6 @@ from util import now_str
 
 
 def sendmail(sender, receiver, subject, content):
-    return
     msg = MIMEText(content, 'html')
     msg['From'] = sender
     msg['To'] = receiver
