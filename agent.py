@@ -245,7 +245,7 @@ if __name__ == '__main__':
    course = sys.argv[1]
    term = 'spring 2014'
    info = getCourseInfo(term, course)
-   print '\n\n\n', json.dumps(info)
+   print '\n\n\n', json.dumps(info).replace('{', '\n').replace('}', '\n')
    print "global: " + str(time.clock() - start)
 
 

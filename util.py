@@ -5,6 +5,7 @@ tz_utc = tz.tzutc()
 tz_local = tz.tzutc()
 
 def set_timezone(timezone):
+    global tz_local
     tz_local = tz.gettz(timezone)
 
 def date_str(date, form):
