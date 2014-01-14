@@ -212,7 +212,7 @@ def getCourseInfo(term, coursename):
     
     # visit links and get seats/waitlist seats
     links = [x['link'] for x in sections]
-    pool = ThreadPool(30)
+    pool = ThreadPool(8)
     asyncs = []
     # print fetchSectionDetails(links[0])
     for link in links:
