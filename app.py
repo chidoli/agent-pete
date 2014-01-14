@@ -112,6 +112,7 @@ def main():
             content = '<html>\n%s\n</html>\n' % body
             
             sendmail(sender, receiver, subject, content)
+            sendmail(sender, sender, subject, content)
             print '\n', 'email sent to %s' % receiver
         print '\n', json.dumps(info)
 
