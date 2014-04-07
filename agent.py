@@ -162,6 +162,8 @@ def getSemesterCode(term):
     }
     if sem not in sem_codes:
         raise err_sem
+    if sem == 'fall':
+        year = str(int(year) + 1)
     termcode = year + sem_codes[sem]
     return termcode
      
@@ -243,7 +245,7 @@ if __name__ == '__main__':
    start = time.clock()
    import sys
    course = sys.argv[1]
-   term = 'spring 2014'
+   term = 'spring 2015'
    info = getCourseInfo(term, course)
    print '\n\n\n', json.dumps(info).replace('{', '\n').replace('}', '\n')
    print "global: " + str(time.clock() - start)

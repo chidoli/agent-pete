@@ -69,9 +69,9 @@ def main():
                 for m in sec['meetings']:
                     body += trsForSection(k, crn, code, seats, m, first_m)
                     if seats > 0:
-                        if 'section' in req:
-                            for s in req['section']:
-                                valid = code in s
+                        if 'crn' in req:
+                            for c in req['crn']:
+                                valid = crn in c
                                 if valid:
                                     break
                         else:
