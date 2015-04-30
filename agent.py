@@ -1,3 +1,4 @@
+import time
 import json
 from urlparse import urlparse
 from multiprocessing.pool import ThreadPool
@@ -7,12 +8,21 @@ import requests as reqs
 
 from htmlutil import *
 
-
-def fetchSectionList(termcode, c_subj, c_num):
+def getBrowser():
     br = mechanize.Browser()
     br.set_handle_robots(False)
-    br.addheaders = [('User-agent', 'Firefox')]
+    br.addheaders = [
+        ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36'),
+        ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
+        ('Accept-Encoding', 'gzip,deflate'),
+        ('Accept-Language', 'en-US,en;q=0.8,ko;q=0.6'),
+        ('Cache-Control', 'max-age=0'),
+        ('Connection', 'keep-alive'),
+    ]
+    return br
 
+def fetchSectionList(termcode, c_subj, c_num):
+    br = getBrowser()
     # open schedule
     br.open("http://wl.mypurdue.purdue.edu/schedule")
     br.form = list( br.forms() )[0]
@@ -91,8 +101,9 @@ def parseSectionList(html):
     return sections 
 
 def fetchSectionDetails(url):
-    resp = reqs.get(url)
-    html = resp.content
+    br = getBrowser()
+    br.open(url)
+    html = br.response().read() 
     return parseSectionDetail(html)
 
 def parseSectionDetail(html):
@@ -241,13 +252,16 @@ def getCourseInfo(term, coursename):
 
 
 if __name__ == '__main__':
-   import time
-   start = time.clock()
-   import sys
-   course = sys.argv[1]
-   term = 'spring 2015'
-   info = getCourseInfo(term, course)
-   print '\n\n\n', json.dumps(info).replace('{', '\n').replace('}', '\n')
-   print "global: " + str(time.clock() - start)
+    import time
+    start = time.clock()
+    import sys
+    course = sys.argv[1]
+    if len(sys.argv) > 3:
+        term = sys.argv[2] + sys.argv[3]
+    else:
+        term = 'fall 2015'
+    info = getCourseInfo(term, course)
+    print '\n\n\n', json.dumps(info).replace('{', '\n').replace('}', '\n')
+    print "global: " + str(time.clock() - start)
 
 

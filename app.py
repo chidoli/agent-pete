@@ -80,25 +80,25 @@ def main():
                             availables.append([k, crn, code, seats, m, first_m])
                     first_m = False
         
-        if 'section' in req:
-            for s in req['section']:
+        if 'crn' in req:
+            for crns in req['crn']:
                 all_in = True
-                for _s in s:
-                    codes = [x[2] for x in availables]
-                    if _s not in codes:
+                avaCrns= [x[2] for x in availables]
+                for crn in crns:
+                    if crn not in avaCrns:
                         all_in = False
                         break
                 if not all_in:
-                    for _s in s:
-                        if _s in codes:
-                            availables.pop(codes.index(_s))
-
-        title = '<h4>%s</h4>\n' % info['Course']
-        body = '%s\n<table>\n%s</table>\n' % (title, body)
-        url = 'mypurdue.purdue.edu'
-        body += '\n\n\n<a href="http://%s">%s</a>\n' % (url, url)
+                    for crn in crns:
+                        if crn in avaCrns:
+                            availables.pop(avaCrns.index(crn))
 
         if len(availables) > 0:
+            title = '<h4>%s</h4>\n' % info['Course']
+            body = '%s\n<table>\n%s</table>\n' % (title, body)
+            url = 'mypurdue.purdue.edu'
+            body += '\n\n\n<a href="http://%s">%s</a>\n' % (url, url)
+
             hl = ''
             for crstype, crn, code, seats, m, first_m in availables:
                 hl += trsForSection(crstype, crn, code, seats, m, first_m)
