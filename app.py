@@ -3,6 +3,8 @@ from flask.ext.sqlalchemy import SQLAlchemy
 
 import time
 
+DEBUG = True
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./agent_pete.db'
 db = SQLAlchemy(app)
@@ -152,8 +154,8 @@ def route_report():
 
 
 if __name__ == '__main__':
-  app.debug = True
-
   import sys
   port = int(sys.argv[1]) if len(sys.argv) == 2 else 8257
+
+  app.debug = DEBUG
   app.run(host='0.0.0.0', port=port)

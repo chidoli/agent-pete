@@ -29,4 +29,8 @@ class Spawner:
 if __name__ == '__main__':
   import time
   spawn_id = str(time.time())
-  Spawner('http://0.0.0.0:8000', 5).run(spawn_id)
+
+  import sys
+  port = int(sys.argv[1]) if len(sys.argv) == 2 else 8257
+
+  Spawner('http://0.0.0.0:%d' % port, 5).run(spawn_id)
