@@ -11,7 +11,7 @@ class Agent:
     self.term = term
     self.crn = crn
 
-  def getHtml(self, url):
+  def get_html(self, url):
     resp = requests.get(url, headers=self.headers)
     return resp.content
 
@@ -26,7 +26,7 @@ class Agent:
 
   def run(self):
     url = URL_BASE % (self.term, self.crn)
-    html = self.getHtml(url)
+    html = self.get_html(url)
     rem, cap = self.parse(html)
     self.report(rem, cap)
 
