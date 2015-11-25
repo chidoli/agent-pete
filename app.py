@@ -26,7 +26,7 @@ class Section(db.Model):
   def dict(self):
     return {
       'term': self.term,
-      'cnr': self.crn,
+      'crn': self.crn,
       'coursename': self.coursename,
       'remaining': self.remaining,
       'capacity': self.capacity,

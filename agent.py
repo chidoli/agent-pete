@@ -2,7 +2,12 @@ import requests
 from requests.compat import urljoin
 from bs4 import BeautifulSoup
 
-URL_BASE = "https://selfservice.mypurdue.purdue.edu/prod/bwckschd.p_disp_detail_sched?term_in=%s&crn_in=%s"
+from util import sendmail
+
+import time
+
+URL_BASE = 'https://selfservice.mypurdue.purdue.edu/prod/bwckschd.p_disp_detail_sched?term_in=%s&crn_in=%s'
+SENDER = 'the.agent.pete@gmail.com'
 
 class Agent:
   headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0',}
@@ -34,7 +39,38 @@ class Agent:
     }
     resp = requests.post(url, data=data)
     notis = resp.json()['notifications']
-    print notis
+    for n in notis:
+      self.notify(n)
+
+  def notify(self, notification):
+    sender = SENDER
+    receiver = '%s@purdue.edu' % notification['username']    
+    subject, content = self.build_notification_body(notification)
+    sendmail(sender, receiver, subject, content)
+
+    crns = ','.join(map(lambda x: x['crn'], notification['sections']))
+    print 'Sent mail to %s for %s' % (notification['username'], crns)
+  
+  def build_notification_body(self, notification):
+    secs = notification['sections']
+    coursename = secs[0]['coursename']
+
+    title = '<h4>%s</h4>\n' % coursename
+    body = title
+    url = 'mypurdue.purdue.edu'
+
+    hl = ''
+    for s in secs:
+      hl += '<tr><td>%s</td><td><b>%s</b></td><td><b>%d</b>/%d</td>' % (s['term'], s['crn'], s['remaining'], s['capacity'])
+    title = '<h4>Available Courses</h4>\n'
+    hl = '%s\n<table>\n%s</table>\n' % (title, hl)
+      
+    subject = '%s is available as of now' % coursename
+    body = '<h3>%s</h3>\n\n\n%s\n%s' % (subject, hl, body)
+    body += '\n\n\n<a href="http://%s">%s</a>\n' % (url, url)
+    content = '<html>\n%s\n</html>\n' % body
+
+    return subject, content
 
   def run(self):
     url = URL_BASE % (self.term, self.crn)
