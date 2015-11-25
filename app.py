@@ -115,8 +115,12 @@ def route_sections():
 
 @app.route('/requests')
 def route_requests():
-  reqs = Request.query.all()
-  return json.jsonify(requests=to_dict(reqs))
+  reqs = []
+  for r in Request.query.all():
+    d = { 'term': r.term, 'crn': r.crn }
+    if d not in reqs:
+      reqs.append(d)
+  return json.jsonify(requests=reqs)
 
 @app.route('/user/<username>')
 def route_user(username):
