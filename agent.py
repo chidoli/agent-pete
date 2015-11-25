@@ -32,9 +32,14 @@ class Agent:
 
 
 if __name__ == '__main__':
+  POOL_SIZE = 20
+  REQUEST_COUNT = 1000
+
   rid = '0'
   term = '201620'
   crns = ['10646', '12888', '14429', '12879', '12877', '14428']
+  cnt = len(crns)
+  crns = [crns[i % cnt] for i in xrange(REQUEST_COUNT)]
 
   def report(self, rem, cap):
     print '[crn %s] %d / %d' % (self.crn, rem, cap)
@@ -44,4 +49,7 @@ if __name__ == '__main__':
     return Agent(rid, term, crn).run()
     
   from multiprocessing import Pool
-  res = Pool(5).map(spawn, crns)
+  res = Pool(POOL_SIZE).map(spawn, crns)
+  
+  print 'Pool size: %d' % POOL_SIZE
+  print 'CRNs: %d' % len(crns)
