@@ -1,4 +1,5 @@
 import requests
+from requests.compat import urljoin
 from bs4 import BeautifulSoup
 
 URL_BASE = "https://selfservice.mypurdue.purdue.edu/prod/bwckschd.p_disp_detail_sched?term_in=%s&crn_in=%s"
@@ -6,8 +7,9 @@ URL_BASE = "https://selfservice.mypurdue.purdue.edu/prod/bwckschd.p_disp_detail_
 class Agent:
   headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0',}
 
-  def __init__(self, sid, term, crn):
+  def __init__(self, sid, server, term, crn):
     self.sid = sid
+    self.server = server
     self.term = term
     self.crn = crn
 
@@ -17,12 +19,22 @@ class Agent:
 
   def parse(self, html):
     soup = BeautifulSoup(html, 'html.parser')
-    cap = int(soup.select('tr td[class~=dddefault]')[1].text)
-    rem = int(soup.select('tr td[class~=dddefault]')[3].text)
-    return rem, cap
+    capacity = int(soup.select('tr td[class~=dddefault]')[1].text)
+    remaining = int(soup.select('tr td[class~=dddefault]')[3].text)
+    return remaining, capacity
 
-  def report(self, rem, cap):
-    pass
+  def report(self, remaining, capacity):
+    url = urljoin(self.server, 'report')
+    data = {
+      'sid': self.sid,
+      'term': self.term,
+      'crn': self.crn,
+      'remaining': remaining,
+      'capacity': capacity
+    }
+    resp = requests.post(url, data=data)
+    notis = resp.json()['notifications']
+    print notis
 
   def run(self):
     url = URL_BASE % (self.term, self.crn)
@@ -33,9 +45,10 @@ class Agent:
 
 if __name__ == '__main__':
   POOL_SIZE = 20
-  REQUEST_COUNT = 1000
+  REQUEST_COUNT = 100
 
   sid = '0'
+  server = ''
   term = '201620'
   crns = ['10646', '12888', '14429', '12879', '12877', '14428']
   cnt = len(crns)
@@ -46,7 +59,7 @@ if __name__ == '__main__':
   Agent.report = report
 
   def spawn(crn):
-    return Agent(sid, term, crn).run()
+    return Agent(sid, server, term, crn).run()
     
   from multiprocessing import Pool
   res = Pool(POOL_SIZE).map(spawn, crns)

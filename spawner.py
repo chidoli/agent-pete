@@ -6,7 +6,7 @@ from agent import Agent
 from multiprocessing import Pool
 
 def spawn(request):
-  Agent(request['sid'], request['term'], request['crn']).run()
+  Agent(request['sid'], request['server'], request['term'], request['crn']).run()
 
 class Spawner:
   def __init__(self, server, pool_size):
@@ -22,19 +22,11 @@ class Spawner:
     reqs = self.get_requests()
     for r in reqs:
       r['sid'] = spawn_id
+      r['server'] = self.server
     Pool(self.pool_size).map(spawn, reqs)
 
 
 if __name__ == '__main__':
-  def report(self, rem, cap):
-    print {
-      'sid': self.sid,
-      'crn': self.crn,
-      'remaining': rem,
-      'capacity': cap
-    }
-  Agent.report = report
-
   import time
   spawn_id = str(time.time())
   Spawner('http://0.0.0.0:8000', 5).run(spawn_id)
