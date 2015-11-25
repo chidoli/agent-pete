@@ -153,4 +153,7 @@ def route_report():
 
 if __name__ == '__main__':
   app.debug = True
-  app.run(host='0.0.0.0', port=8000)
+
+  import sys
+  port = sys.argv[1] if len(sys.argv) == 2 else 8257
+  app.run(host='0.0.0.0', port=port)
