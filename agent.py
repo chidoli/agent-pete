@@ -6,8 +6,8 @@ URL_BASE = "https://selfservice.mypurdue.purdue.edu/prod/bwckschd.p_disp_detail_
 class Agent:
   headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0',}
 
-  def __init__(self, rid, term, crn):
-    self.rid = rid
+  def __init__(self, sid, term, crn):
+    self.sid = sid
     self.term = term
     self.crn = crn
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
   POOL_SIZE = 20
   REQUEST_COUNT = 1000
 
-  rid = '0'
+  sid = '0'
   term = '201620'
   crns = ['10646', '12888', '14429', '12879', '12877', '14428']
   cnt = len(crns)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
   Agent.report = report
 
   def spawn(crn):
-    return Agent(rid, term, crn).run()
+    return Agent(sid, term, crn).run()
     
   from multiprocessing import Pool
   res = Pool(POOL_SIZE).map(spawn, crns)
