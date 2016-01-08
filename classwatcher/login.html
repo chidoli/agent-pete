@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Class Watcher</title><!-- BOOTSTRAP CORE STYLE  -->
+  <link href="assets/css/bootstrap.css" rel="stylesheet">
+  <!-- FONT AWESOME ICONS  -->
+  <link href="assets/css/font-awesome.css" rel="stylesheet">
+  <!-- CUSTOM STYLE  -->
+  <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/class-watcher.css" rel="stylesheet">
+  <link href="assets/css/flat-form.css" rel="stylesheet">
+</head>
+<body>
+  <!-- HEADER END-->
+  <div class="navbar navbar-inverse set-radius-zero">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="index.html">Class Watcher</a>
+      </div>
+    </div>
+  </div><!-- LOGO HEADER END-->
+
+  <div class="container">
+    <div id="login-background"></div>
+    <div id="login-form" class="flat-form">
+      <ul class="tabs">
+        <li>
+          <a class="active" href="#login">Login</a>
+        </li>
+        <li>
+          <a href="#register">Register</a>
+        </li>
+        <li>
+          <a href="#reset">Reset Password</a>
+        </li>
+      </ul>
+      <div class="form-action show" id="login">
+        <h1>Login on ClassWatcher</h1><br>
+        <form>
+          <ul>
+            <li><input placeholder="Username" type="text" name="username"></li><br>
+            <li><input placeholder="Password" type="password" name="passwd"></li><br>
+            <li><input class="button" type="submit" value="Login"></li><br>
+          </ul>
+        </form>
+      </div><!--/#login.form-action-->
+      <div class="form-action hide" id="register">
+        <h1>Register</h1>
+        <p>You should totally sign up for our super awesome service. It's what
+        all the cool kids are doing nowadays.</p>
+        <form>
+          <ul>
+            <li><input placeholder="Username" type="text"></li>
+            <li><input placeholder="Password" type="password"></li>
+            <li><input class="button" type="submit" value="Sign Up"></li>
+          </ul>
+        </form>
+      </div><!--/#register.form-action-->
+      <div class="form-action hide" id="reset">
+        <h1>Reset Password</h1>
+        <p>To reset your password enter your email and your birthday and we'll
+        send you a link to reset your password.</p>
+        <form>
+          <ul>
+            <li><input placeholder="Email" type="text"></li>
+            <li><input placeholder="Birthday" type="text"></li>
+            <li><input class="button" type="submit" value="Send"></li>
+          </ul>
+        </form>
+      </div><!--/#register.form-action-->
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          &copy; 2015 PKHackers | @CopyRights Reserved
+        </div>
+      </div>
+    </div>
+  </footer><!-- FOOTER SECTION END-->
+</body>
+</html>
